@@ -1,0 +1,14 @@
+html
+    head
+        title= title
+    style
+        include style.css
+    body
+        h1= message
+        img(src="./assets/header.jpg")
+        h1="the most expensive memes"
+        ul
+            each meme in memes
+                li
+                    a(href="./views/" + meme.url)
+                        img(src=meme.url)

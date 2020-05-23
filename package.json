@@ -1,0 +1,33 @@
+{
+  "name": "meme",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "npm-watch"
+  },
+  "author": "Marta Markocka",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "npm-watch": "^0.6.0",
+    "pug": "^2.0.4",
+    "sqlite3": "^4.2.0",
+    "typescript": "^3.9.3"
+  },
+  "devDependencies": {
+    "@types/node": "^14.0.5",
+    "@types/sqlite3": "^3.1.6",
+    "mocha": "^7.1.2",
+    "ts-node": "^8.10.1"
+  },
+  "watch": {
+    "build": {
+      "patterns": [
+        "."
+      ],
+      "extensions": "ts"
+    }
+  }
+}

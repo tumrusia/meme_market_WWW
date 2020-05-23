@@ -1,0 +1,23 @@
+html
+    head
+        title= title
+        style
+            include style.css
+    body
+        img(src='../.' + url)
+        table
+            tr
+                th date
+                th price
+            each moment in history
+                tr
+                    td #{moment.date}
+                    td #{moment.price}
+
+        div(class='form')
+            input(type='text', placeholder='enter a new price', name='changePrice')
+            input(type="submit", name="submit", value="change", onClick="newPrice()")
+        div(class='underscore')
+
+        script
+            include ../updatePrice.js
