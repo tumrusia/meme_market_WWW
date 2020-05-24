@@ -35,7 +35,7 @@ th, td {
     padding: 10px;
 }
 
-div.form {
+form {
     width: 40%;
     margin: 80px 30% 0 30%;
     display: flex;

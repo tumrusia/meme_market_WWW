@@ -8,9 +8,10 @@ function zalozBaze() {
      * url VARCHAR(255) NOT NULL PRIMARY KEY
      * price INT NOT NULL
      * date VARCHAR(20) NOT NULL
+     * actual INT NOT NULL <-- 1 means yes, 0 means no
      * CONSTRAINT id PRIMARY KEY (url, date)
      */
-    db.run('CREATE TABLE meme (url VARCHAR(255) NOT NULL, price INT NOT NULL, date VARCHAR(20) NOT NULL, CONSTRAINT id PRIMARY KEY (url, date));');
+    db.run('CREATE TABLE meme (url VARCHAR(255) NOT NULL, price INT NOT NULL, date VARCHAR(20) NOT NULL, actual INT NOT NULL, CONSTRAINT id PRIMARY KEY (url, date));');
     db.close;
 }
 

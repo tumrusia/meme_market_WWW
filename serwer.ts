@@ -10,26 +10,9 @@ let close = promisify(fs.close);
 sqlite3.verbose();
 let db = new sqlite3.Database('meme.db');
 
-let most_expensive = [
-    {'url': './assets/1.jpg',
-     'price': 10,
-     'date':'2020-05-22 16:57:17'},
-    {'url': './assets/2.jpg',
-     'price': 11,
-     'date':'2020-05-22 16:57:17'},
-    {'url': './assets/3.jpg',
-     'price': 12,
-     'date':'2020-05-22 16:57:17'}
-];
-
-class Moment {
-    date: string;
-    price: number;
-}
-
 function addMemeToDB(filename: string, price: number) {
     let date: string = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    db.run('INSERT INTO meme (url, price, date) VALUES ("' + filename + '", ' + price + ', "' + date + '");');
+    db.run('INSERT INTO meme (url, price, date, actual) VALUES ("' + filename + '", ' + price + ', "' + date + '", 1);');
 }
 
 function add10Memes() {
@@ -46,7 +29,24 @@ function add10Memes() {
 }
 
 function searchHistory(res, filename, callback) {
-    let zapytanie = 'SELECT date, price FROM meme WHERE url = "' + filename + '";';
+    let zapytanie = 'SELECT date, price FROM meme WHERE url = "' + filename + '" ORDER BY date DESC;';
+    db.all(zapytanie, [], (err, rows) => {
+        if (err) throw (err);
+
+        let history = [];
+        for(let {date, price} of rows) {
+            let o = {date: date, price: price};
+            history.push(o);
+        }
+        callback(res, filename, history);
+    });
+}
+
+function addNewPrice(res, filename, newPrice, callback) {
+    db.run('UPDATE meme SET actual = 0 WHERE url = "' + filename + '";');
+    let date: string = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    db.run('INSERT INTO meme (url, price, date, actual) VALUES ("' + filename + '", ' + newPrice + ', "' + date + '", 1);');
+    let zapytanie = 'SELECT date, price FROM meme WHERE url = "' + filename + '" ORDER BY date DESC;';
     db.all(zapytanie, [], (err, rows) => {
         if (err) throw (err);
 
@@ -66,7 +66,7 @@ function openPageHistory(res, filename: string, history) {
 }
 
 function chooseTheMostExpensive3(res, callback) {
-    let zapytanie = 'SELECT url FROM meme ORDER BY price DESC;';
+    let zapytanie = 'SELECT url FROM meme WHERE actual = 1 ORDER BY price DESC;';
     db.all(zapytanie, [], (err, rows) => {
         if (err) throw (err);
 
@@ -94,7 +94,6 @@ let app = express();
 app.set('view engine', 'pug');
 
 app.get('/', function(req, res) {
-    console.log(most_expensive);
     chooseTheMostExpensive3(res, openPageMain);
 });
 
@@ -130,9 +129,21 @@ app.get('/views/assets/:image', function(req, res) {
                 res.writeHead(404);
                 res.write(err);
                 res.end();
-            } else {
-                console.log("hej " + filename);
+            } else if (req.url.length < ("/views/assets/?changePrice=1&submit=change").length + req.params.image.length) {
+                console.log("hej " + filename + " " + req.url);
                 searchHistory(res, filename, openPageHistory);
+            } else {
+                let help = req.url.split('/');
+                let help2 = (help[help.length -1]).split('=');
+                let help3 = (help2[1]).split('&');
+                let newPrice = parseInt(help3[0]);
+                console.log(newPrice);
+                if (isNaN(newPrice)) {
+                    console.log("Błędna wartość nowej ceny!");
+                    searchHistory(res, filename, openPageHistory);
+                } else {
+                    addNewPrice(res, filename, newPrice, openPageHistory);
+                }
             }
         });
     }).then(() => close(fd)).catch((reason) => {
@@ -140,8 +151,8 @@ app.get('/views/assets/:image', function(req, res) {
     });
 });
 
+//add10Memes();
+
 app.listen(8080, function() {
     console.log('App listening on port 8080!');
 });
-
-//add10Memes();
