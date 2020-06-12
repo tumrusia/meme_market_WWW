@@ -2,7 +2,7 @@ html
     head
         title= title
         style
-            include style.css
+            include history.css
     body
         img(src='../../assets/' + url)
         table
@@ -14,9 +14,4 @@ html
                     td #{moment.date}
                     td #{moment.price}
 
-        form(action=url method="POST")
-            input(type='text', placeholder='enter a new price', name='changePrice')
-            input(type="hidden" name="_csrf" value=token)
-            input(type="submit", name="submit", value="change")
-        div(class='underscore')
         div(class='pageViews')="you have already visited " + pageViews + " pages at the market"

@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import {promisify} from 'util';
+import {log, promisify} from 'util';
 import * as sqlite3 from 'sqlite3';
 
 let open = promisify(fs.open);
@@ -25,7 +25,7 @@ function add10Memes() {
     addMemeToDB('10.jpg', 29);
 }
 
-function searchHistory(res, req, filename, callback) {
+function searchHistory(res, req, logged: boolean, filename, callback) {
     let zapytanie = 'SELECT date, price FROM meme WHERE url = "' + filename + '" ORDER BY date DESC;';
     db.all(zapytanie, [], (err, rows) => {
         if (err) throw (err);
@@ -35,7 +35,7 @@ function searchHistory(res, req, filename, callback) {
             let o = {date: date, price: price};
             history.push(o);
         }
-        callback(res, req, filename, history);
+        callback(res, req, logged, filename, history);
     });
 }
 
@@ -55,19 +55,30 @@ function addNewPrice(res, req, filename, newPrice) {
     });
 }
 
-function openPageHistory(res, req, filename: string, history) {
+function openPageHistory(res, req, logged: boolean, filename: string, history) {
     console.log("open " + filename);
     console.log(history);
-    res.render('history', {
-        title: 'meme price history',
-        url: filename,
-        history: history,
-        token: req.csrfToken(),
-        pageViews: req.session.page_views
-    });
+    if (logged) {
+        res.render('logged-history', {
+            title: 'meme price history',
+            url: filename,
+            history: history,
+            token: req.csrfToken(),
+            pageViews: req.session.page_views
+        });
+    } else {
+        res.render('not-logged-history', {
+            title: 'meme price history',
+            url: filename,
+            history: history,
+            token: req.csrfToken(),
+            pageViews: req.session.page_views
+        });
+    }
+
 }
 
-function chooseTheMostExpensive3(res, req, callback) {
+function chooseTheMostExpensive3(res, req, logged: boolean, callback) {
     let zapytanie = 'SELECT url FROM meme WHERE actual = 1 ORDER BY price DESC;';
     db.all(zapytanie, [], (err, rows) => {
         if (err) throw (err);
@@ -82,18 +93,29 @@ function chooseTheMostExpensive3(res, req, callback) {
                 break;
             }
         }
-        callback(res, req, selected);
+        callback(res, req, logged, selected);
     });
 }
 
-function openPageMain(res, req, selected) {
+function openPageMain(res, req, logged: boolean, selected) {
     console.log(selected);
-    res.render('index', {
-        title: 'meme market',
-        message: 'I\'m not good in memes, so I used random pictures, sorry',
-        memes: selected,
-        pageViews: req.session.page_views
-    });
+    if (logged) {
+        res.render('logged', {
+            title: 'meme market',
+            message: 'I\'m not good in memes, so I used random pictures, sorry',
+            memes: selected,
+            token: req.csrfToken(),
+            pageViews: req.session.page_views
+        });
+    } else {
+        res.render('index', {
+            title: 'meme market',
+            message: 'I\'m not good in memes, so I used random pictures, sorry',
+            memes: selected,
+            token: req.csrfToken(),
+            pageViews: req.session.page_views
+        });
+    }
 }
 
 function countPageViews(req) {
@@ -138,11 +160,28 @@ app.use(session({secret: "Shh, its a secret!"}));
 app.set('view engine', 'pug');
 
 app.get('/', function (req, res) {
+    req.session.nick = "";
     countPageViews(req);
-    chooseTheMostExpensive3(res, req, openPageMain);
+    chooseTheMostExpensive3(res, req, false, openPageMain);
 });
 
-function openImage(req, res, justOpen: boolean) {
+app.post('/', function (req, res) {
+    console.log(`Message received: ${req.body.nick}`);
+    console.log(`CSRF token used: ${req.body._csrf}`);
+
+    countPageViews(req);
+
+    if (req.body.nick === undefined || req.body.nick === "") {
+        console.log("Pusty nick. Nie jesteś zalogowany.");
+        req.body.nick = "";
+        chooseTheMostExpensive3(res, req, false, openPageMain);
+    } else {
+        req.session.nick = req.body.nick;
+        chooseTheMostExpensive3(res, req, true, openPageMain);
+    }
+});
+
+function openImage(req, res, logged: boolean, justOpen: boolean) {
     let fd;
     let path = './assets/' + req.params.image;
     let filename = req.params.image;
@@ -157,7 +196,7 @@ function openImage(req, res, justOpen: boolean) {
                 res.write(data);
                 res.end();
             } else {
-                searchHistory(res, req, filename, openPageHistory);
+                searchHistory(res, req, logged, filename, openPageHistory);
             }
         });
     }).then(() => close(fd)).catch((reason) => {
@@ -166,12 +205,17 @@ function openImage(req, res, justOpen: boolean) {
 }
 
 app.get('/assets/:image', function (req, res) {
-    openImage(req, res, true);
+    openImage(req, res, false, true);
 });
 
 app.get('/history/:image', function (req, res) {
     countPageViews(req);
-    openImage(req, res, false);
+    if (req.session.nick === undefined || req.session.nick === "") {
+        openImage(req, res, false,false);
+    } else {
+        console.log("nick to: " + req.session.nick);
+        openImage(req, res, true, false);
+    }
 });
 
 app.post('/history/:image', (req, res) => {
@@ -184,7 +228,7 @@ app.post('/history/:image', (req, res) => {
         addNewPrice(res, req, req.params.image, req.body.changePrice);
     }
 
-    openImage(req, res, false);
+    openImage(req, res, true, false);
 });
 
 //add10Memes();

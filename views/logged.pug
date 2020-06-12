@@ -2,14 +2,13 @@ html
     head
         title= title
     style
-        include not-logged.css
+        include logged.css
     body
         h1= message
         div(class="header")
-            form(action="/" method="POST")
-                input(type='text', placeholder='enter your nick', name='nick')
+            form(action="/" method="GET")
                 input(type="hidden" name="_csrf" value=token)
-                input(type="submit", name="login", value="Log in")
+                input(type="submit", name="logout", value="Log out")
 
         h1="the most expensive memes"
         ul

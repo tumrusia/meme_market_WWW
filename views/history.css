@@ -1,0 +1,60 @@
+@font-face {
+    font-family: "Jost";
+    src: url("../assets/Jost-Font/Jost-400-Book.ttf") format("truetype");
+}
+
+img {
+    width: 60%;
+    margin: 40px 20%;
+}
+
+table {
+    width: 40%;
+    margin: 40px 30%;
+    border: solid black 3px;
+    border-collapse: collapse;
+    text-align: center;
+    font-family: "Jost", sans-serif;
+    font-size: 20px;
+}
+
+th, td {
+    border: solid black 1px;
+    padding: 10px;
+}
+
+form {
+    width: 40%;
+    margin: 80px 30% 0 30%;
+    display: flex;
+    justify-content: space-between;
+}
+
+input {
+    border: none;
+    text-align: left;
+    color: #151515;
+    font-size: 20px;
+    background-color: white;
+    outline: none;
+}
+
+input[type=submit] {
+    text-transform: uppercase;
+}
+
+div.underscore {
+    padding: 1px;
+    width: 40%;
+    margin: 2px 30% 40px 30%;
+    background-color: black;
+}
+
+div.pageViews {
+    font-family: "Jost", sans-serif;
+    font-size: 20px;
+    margin-top: 50px;
+    padding: 30px;
+    text-align: center;
+    color: #cccccc;
+}
