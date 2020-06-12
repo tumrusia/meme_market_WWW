@@ -58,10 +58,16 @@ function addNewPrice(res, req, filename, newPrice) {
 function openPageHistory(res, req, filename: string, history) {
     console.log("open " + filename);
     console.log(history);
-    res.render('history', {title: 'meme price history', url: filename, history: history, token: req.csrfToken()});
+    res.render('history', {
+        title: 'meme price history',
+        url: filename,
+        history: history,
+        token: req.csrfToken(),
+        pageViews: req.session.page_views
+    });
 }
 
-function chooseTheMostExpensive3(res, callback) {
+function chooseTheMostExpensive3(res, req, callback) {
     let zapytanie = 'SELECT url FROM meme WHERE actual = 1 ORDER BY price DESC;';
     db.all(zapytanie, [], (err, rows) => {
         if (err) throw (err);
@@ -76,23 +82,46 @@ function chooseTheMostExpensive3(res, callback) {
                 break;
             }
         }
-        callback(res, selected);
+        callback(res, req, selected);
     });
 }
 
-function openPageMain(res, selected) {
+function openPageMain(res, req, selected) {
     console.log(selected);
     res.render('index', {
         title: 'meme market',
         message: 'I\'m not good in memes, so I used random pictures, sorry',
-        memes: selected
+        memes: selected,
+        pageViews: req.session.page_views
     });
+}
+
+function countPageViews(req) {
+    if(req.session.page_views){
+        req.session.page_views++;
+        console.log("You visited this page " + req.session.page_views + " times");
+    } else {
+        req.session.page_views = 1;
+        console.log("Welcome to this page for the first time!");
+        req.session.expire = new Date(Date.now() + 15*60*1000);
+        console.log("New session, expire by " + req.session.expire);
+    }
+
+    let now = new Date(Date.now());
+    let end = new Date(req.session.expire);
+    if (end <= now) {
+        console.log("Your session expired.");
+        req.session.page_views = 1;
+        req.session.expire = new Date(Date.now() + 15*60*1000);
+        console.log("New session, expire by " + req.session.expire);
+    }
 }
 
 const express = require('express');
 const bodyParser = require('body-parser');
 const csurf = require('csurf');
 const cookieParser = require('cookie-parser');
+const session = require('express-session');
 
 const app = express();
 const csrfMiddleware = csurf({
@@ -104,11 +133,13 @@ app.use(bodyParser.urlencoded({
 }));
 app.use(cookieParser());
 app.use(csrfMiddleware);
+app.use(session({secret: "Shh, its a secret!"}));
 
 app.set('view engine', 'pug');
 
 app.get('/', function (req, res) {
-    chooseTheMostExpensive3(res, openPageMain);
+    countPageViews(req);
+    chooseTheMostExpensive3(res, req, openPageMain);
 });
 
 function openImage(req, res, justOpen: boolean) {
@@ -139,6 +170,7 @@ app.get('/assets/:image', function (req, res) {
 });
 
 app.get('/history/:image', function (req, res) {
+    countPageViews(req);
     openImage(req, res, false);
 });
 

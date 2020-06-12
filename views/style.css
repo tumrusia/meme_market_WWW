@@ -61,3 +61,12 @@ div.underscore {
     margin: 2px 30% 40px 30%;
     background-color: black;
 }
+
+div.pageViews {
+    font-family: "Jost", sans-serif;
+    font-size: 20px;
+    margin-top: 50px;
+    padding: 30px;
+    text-align: center;
+    color: #cccccc;
+}
